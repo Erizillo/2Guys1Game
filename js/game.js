@@ -38,6 +38,10 @@ let stickyReady = false;
 let spaceKey;
 let flyingBricks;
 let enemyProjectiles;
+let boss;
+let bossLife = 20;
+let bossProjectiles;
+let bossBlocks;
 
 // --- PRELOAD ---
 function preloadStage() {
@@ -48,20 +52,26 @@ function preloadStage() {
     game.load.image('powerup_powerball', 'imgs/ball_green.png');
     game.load.image('powerup_key', 'imgs/key.png');
     game.load.image('powerup_sticky', 'imgs/hole.png');
+    game.load.image('powerup_life', 'imgs/life_up.png');
+    game.load.image('powerup_time', 'imgs/clock.png');
     game.load.image('block_strong', 'imgs/block_locked_small.png');
     game.load.image('block_weak', 'imgs/block_small.png');
-    game.load.image('background_game', 'imgs/background_blue.png');
+    game.load.image('background_game', 'imgs/background_level.png');
     game.load.image('bombattack', 'imgs/bomb.png');
     game.load.image('enemy', 'imgs/enemy.png');
     game.load.image('block_green', 'imgs/block_small.png');
     game.load.image('block_yellow', 'imgs/block_small_yellow.png');
     game.load.image('nuclear', 'imgs/nuclear.png');
+    game.load.image('boss', 'imgs/boss.png');
+    game.load.image('boss_attack', 'imgs/boss_bomb.png');
+
 
     game.load.audio('rebotePaddle', 'sounds/BolaRebote.wav');
     game.load.audio('musicaGameplay', 'sounds/CancionGameplay.mp3');
     game.load.audio('musicaMenu', 'sounds/CancionMenu.mp3');
     game.load.audio('golpeLadrillo', 'sounds/LadrilloGolpe.mp3');
     game.load.audio('sonidoPowerup', 'sounds/PowerUp.mp3');
+    
 }
 
 // --- LOAD ---
@@ -90,48 +100,84 @@ function loadStage() {
     powerups = game.add.group();
     powerups.enableBody = true;
 
+
     levelData = game.cache.getJSON('levelData');
     let layout = levelData.layout;
 
-    for (let row = 0; row < layout.length; row++) {
-        for (let col = 0; col < layout[row].length; col++) {
-            let cell = layout[row][col];
-            let brick;
+    // Nivel 5: no carga ladrillos, solo jefe
+    if (level === 5) {
+        // Jefe
+        boss = game.add.sprite(GAME_STAGE_WIDTH / 2, 0, 'boss');
+        boss.anchor.setTo(0.5, 0);
+        boss.scale.setTo(0.5);
+        game.physics.arcade.enable(boss);
+        boss.body.immovable = true;
+        bossLife = 50;
+        boss.body.velocity.x = 100;
+        boss.body.collideWorldBounds = true;
+        boss.body.bounce.x = 1;
 
-            if (level === 4) {
-                // Nivel 4: bloques verdes y amarillos
-                if (cell === 1) {
-                    brick = bricks.create(SPACING + col * BRICKWIDTH, SPACING + row * BRICKHEIGHT, 'block_green');
-                    brick.colorType = 'green';
-                } else if (cell === 2) {
-                    brick = bricks.create(SPACING + col * BRICKWIDTH, SPACING + row * BRICKHEIGHT, 'block_yellow');
-                    brick.colorType = 'yellow';
-                } else {
-                    continue;
-                }
-                brick.health = 1;
+        bossProjectiles = game.add.group();
+        bossProjectiles.enableBody = true;
 
-            } else if (cell === 1) {
-                if (level === 2) {
-                    brick = bricks.create(SPACING + col * BRICKWIDTH, SPACING + row * BRICKHEIGHT, 'block_strong');
-                    brick.health = 2;
-                } else if (level === 3) {
-                    brick = bricks.create(SPACING + col * BRICKWIDTH, SPACING + row * BRICKHEIGHT, 'block_weak');
-                    brick.body.velocity.x = (col % 2 === 0 ? 50 : -50);
-                    brick.body.collideWorldBounds = true;
-                    brick.body.bounce.x = 1;
+        bossBlocks = game.add.group();
+        bossBlocks.enableBody = true;
+
+        game.time.events.loop(Phaser.Timer.SECOND * 1, bossShoot, this);
+        game.time.events.loop(Phaser.Timer.SECOND * 5, spawnBossBlock, this);
+    } else {
+        for (let row = 0; row < layout.length; row++) {
+            for (let col = 0; col < layout[row].length; col++) {
+                let cell = layout[row][col];
+                let brick;
+
+                if (level === 4) {
+                    if (cell === 1) {
+                        brick = bricks.create(SPACING + col * BRICKWIDTH, SPACING + row * BRICKHEIGHT, 'block_green');
+                        brick.colorType = 'green';
+                    } else if (cell === 2) {
+                        brick = bricks.create(SPACING + col * BRICKWIDTH, SPACING + row * BRICKHEIGHT, 'block_yellow');
+                        brick.colorType = 'yellow';
+                    } else {
+                        continue;
+                    }
                     brick.health = 1;
-                } else {
-                    brick = bricks.create(SPACING + col * BRICKWIDTH, SPACING + row * BRICKHEIGHT, 'block_weak');
-                    brick.health = 1;
+                } else if (cell === 1) {
+                    if (level === 2) {
+                        brick = bricks.create(SPACING + col * BRICKWIDTH, SPACING + row * BRICKHEIGHT, 'block_strong');
+                        brick.health = 2;
+                    } else if (level === 3) {
+                        brick = bricks.create(SPACING + col * BRICKWIDTH, SPACING + row * BRICKHEIGHT, 'block_weak');
+                        brick.body.velocity.x = (col % 2 === 0 ? 50 : -50);
+                        brick.body.collideWorldBounds = true;
+                        brick.body.bounce.x = 1;
+                        brick.health = 1;
+                    } else {
+                        brick = bricks.create(SPACING + col * BRICKWIDTH, SPACING + row * BRICKHEIGHT, 'block_weak');
+                        brick.health = 1;
+                    }
                 }
-            }
 
-            if (brick) {
-                brick.body.immovable = true;
+                if (brick) {
+                    brick.body.immovable = true;
+                }
             }
         }
     }
+
+    gameMusic = game.add.audio('musicaGameplay');
+    gameMusic.loop = true;
+    gameMusic.volume = 0.2;
+    gameMusic.play();
+
+    flyingBricks = game.add.group();
+    flyingBricks.enableBody = true;
+
+    enemyProjectiles = game.add.group();
+    enemyProjectiles.enableBody = true;
+
+    game.time.events.loop(Phaser.Timer.SECOND * 6, spawnFlyingBrick, this);
+
 
     cursors = game.input.keyboard.createCursorKeys();
     score = 0;
@@ -165,6 +211,13 @@ function updateStage() {
         balls.forEach(b => {
             b.x = paddle.x;
             b.y = paddle.y - paddle.height;
+            game.physics.arcade.collide(b, paddle, hitPaddle, null, this);
+            game.physics.arcade.collide(b, bricks, hitBrick, null, this);
+            game.physics.arcade.collide(b, flyingBricks, hitFlyingBrick, null, this);
+            game.physics.arcade.collide(b, bossBlocks, hitBrick, null, this); // ✅ Añade esta línea
+            if (level === 5 && boss) {
+                game.physics.arcade.collide(b, boss, hitBoss, null, this);
+            }
         });
     
         if (spaceKey.isDown) {
@@ -183,9 +236,25 @@ function updateStage() {
         paddle.body.velocity.x = 0;
     }
 
-    balls.forEach(function (b) {
+    let desiredSpeed = SPEED * 1.5; // o cualquier valor fijo deseado
+
+    balls.forEach(b=> {
+        let vx = ball.body.velocity.x;
+        let vy = ball.body.velocity.y;
+        let currentSpeed = Math.sqrt(vx * vx + vy * vy);
+    
+        if (currentSpeed !== 0) {
+            let scale = desiredSpeed / currentSpeed;
+            ball.body.velocity.x *= scale;
+            ball.body.velocity.y *= scale;
+        }
         game.physics.arcade.collide(b, paddle, hitPaddle, null, this);
         game.physics.arcade.collide(b, bricks, hitBrick, null, this);
+        game.physics.arcade.collide(b, flyingBricks, hitFlyingBrick, null, this);
+        game.physics.arcade.collide(b, bossBlocks, hitBrick, null, this); // ✅ Añade esta línea
+        if (level === 5 && boss) {
+            game.physics.arcade.collide(b, boss, hitBoss, null, this);
+        }
     });
 
     game.physics.arcade.overlap(paddle, powerups, activatePowerup, null, this);
@@ -214,10 +283,20 @@ function updateStage() {
     // Colisión de bala enemiga con paddle
     game.physics.arcade.overlap(paddle, enemyProjectiles, hitByProjectile, null, this);
 
-    if (bricks.countLiving() === 0) {
-        if (gameMusic && gameMusic.isPlaying) gameMusic.stop();
+    if (level !== 5 && bricks.countLiving() === 0) {
+        if (gameMusic && gameMusic.isPlaying) {
+            gameMusic.stop();
+        }
         game.state.start('win');
     }
+        // Colisiones de bola con jefe
+    balls.forEach(b => {
+        game.physics.arcade.collide(b, boss, hitBoss, null, this);
+        game.physics.arcade.collide(b, bossBlocks);
+    });
+
+    // Colisión de proyectiles del boss con paddle
+    game.physics.arcade.overlap(paddle, bossProjectiles, hitByProjectile, null, this);
 }
 
 // --- COLISIONES ---
@@ -277,14 +356,18 @@ function hitBrick(ball, brick) {
         score += 10 * scoreMultiplier;
         scoreText.text = 'Score: ' + score;
 
-        if (Math.random() < 0.2) {
-            const powerupTypes = ['expand', 'score', 'split', 'powerball', 'sticky'];
+        if (Math.random() < 0.4) {
+            const powerupTypes = ['expand', 'score', 'split', 'powerball', 'sticky', 'life', 'time'];
             let chosen = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
             let spriteKey = chosen === 'powerball' ? 'powerup_key' :
                             chosen === 'sticky' ? 'powerup_sticky' :
+                            chosen === 'life' ? 'powerup_life' :
+                            chosen === 'time' ? 'powerup_time' :
                             'powerup_' + chosen;
             let powerup = powerups.create(brick.x + brick.width / 2, brick.y + brick.height / 2, spriteKey);
-            if (chosen === 'score') powerup.scale.setTo(0.2);
+            if (chosen === 'score') powerup.scale.setTo(0.1);
+            if (chosen === 'life') powerup.scale.setTo(0.2);
+            if (chosen === 'time') powerup.scale.setTo(0.25);
             powerup.anchor.setTo(0.5);
             powerup.body.velocity.y = 100;
             powerup.type = chosen;
@@ -333,6 +416,15 @@ function activatePowerup(paddle, powerup) {
     } else if (powerup.type === 'nuke') {
         if (gameMusic && gameMusic.isPlaying) gameMusic.stop();
         game.state.start('win');
+    }
+    else if (powerup.type === 'life') {
+        lives += 1;
+        livesText.text = 'Lives: ' + lives;
+        
+    }
+    else if (powerup.type === 'time') {
+        timeLeft += 30;
+        timeText.text = 'Time left: ' + timeLeft;
     }
 }
 
@@ -399,14 +491,62 @@ function hitFlyingBrick(ball, brick) {
                             'powerup_' + chosen;
             let powerup = powerups.create(brick.x, brick.y, spriteKey);
             if (chosen === 'score') {
-                powerup.scale.setTo(0.2);
+                powerup.scale.setTo(0.1);
             }
+            if (chosen === 'time') powerup.scale.setTo(0.25);
+            if (chosen === 'life') powerup.scale.setTo(0.2);
             powerup.anchor.setTo(0.5);
             powerup.body.velocity.y = 100;
             powerup.type = chosen;
         }
     }
     brick.kill();
+}
+function bossShoot() {
+    if (!boss.alive) return;
+
+    let bullet = bossProjectiles.create(boss.x, boss.height, 'boss_attack');
+    bullet.anchor.setTo(0.5);
+    bullet.scale.setTo(0.2);
+    bullet.body.velocity.y = 250;
+    bullet.checkWorldBounds = true;
+    bullet.outOfBoundsKill = true;
+}
+function spawnBossBlock() {
+    if (!boss.alive) return;
+
+    let attempts = 0;
+    let maxAttempts = 10;
+    let placed = false;
+
+    while (!placed && attempts < maxAttempts) {
+        let x = Phaser.Math.between(0, GAME_STAGE_WIDTH - BRICKWIDTH);
+        let y = boss.height + 60;
+        let overlap = false;
+
+        bossBlocks.forEachAlive(block => {
+            if (Math.abs(block.x - x) < BRICKWIDTH && Math.abs(block.y - y) < BRICKHEIGHT) {
+                overlap = true;
+            }
+        });
+
+        if (!overlap) {
+            let block = bossBlocks.create(x, y, 'block_weak');
+            block.body.immovable = true;
+            placed = true;
+        }
+
+        attempts++;
+    }
+}
+function hitBoss(ball, bossSprite) {
+    bossLife--;
+    score += 10;
+    scoreText.text = 'Score: ' + score;
+    if (bossLife <= 0) {
+        boss.kill();
+        game.state.start('win');
+    }
 }
 
 function hitByProjectile(paddle, projectile) {
