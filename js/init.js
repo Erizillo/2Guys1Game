@@ -14,11 +14,15 @@ let splashState = {
         game.load.image('paddle', 'imgs/button_blue_thin.png');
         game.load.image('ball', 'imgs/ball_blue.png');
         game.load.image('brick', 'imgs/block_small.png');
+        game.load.image('background', 'imgs/background_menu.jpg');
 
-        // Carga de música del menú
         game.load.audio('menuMusic', 'sounds/CancionMenu.mp3');
     },
     create: function () {
+        let bg = game.add.sprite(0, 0, 'background');
+        bg.width = GAME_STAGE_WIDTH;
+        bg.height = GAME_STAGE_HEIGHT;
+
         let splashText = game.add.text(game.world.centerX, game.world.centerY, 'Welcome to Carcanoid!', { font: '40px Arial', fill: '#ffffff' });
         splashText.anchor.set(0.5);
 
@@ -31,7 +35,7 @@ let splashState = {
 let menuState = {
 
     preload: function () {
-        game.load.image('background', 'imgs/background_brown.png');
+        game.load.image('background', 'imgs/background_menu.jpg');
         game.load.image('ball_blue', 'imgs/ball_blue.png');
         game.load.image('ball_red', 'imgs/ball_red.png');
         game.load.image('star', 'imgs/star.png');
@@ -41,7 +45,7 @@ let menuState = {
     },
 
     create: function () {
-        // Reproduce música del menú en bucle
+        
         let bg = game.add.sprite(0, 0, 'background');
         bg.width = GAME_STAGE_WIDTH;
         bg.height = GAME_STAGE_HEIGHT;
@@ -60,19 +64,22 @@ let menuState = {
         let title = game.add.text(game.world.centerX, 100, 'Carcanoid - Select Level', { font: '32px Arial', fill: '#ffffff' });
         title.anchor.set(0.5);
 
-        let level1Text = game.add.text(game.world.centerX, 220, 'Press 1 for Level 1', { font: '24px Arial', fill: '#ffffff' });
+        let level1Text = game.add.text(game.world.centerX, 220, 'Press 1 for Level 1', { font: '22px Arial', fill: '#ffffff' });
         level1Text.anchor.set(0.5);
 
-        let level2Text = game.add.text(game.world.centerX, 280, 'Press 2 for Level 2', { font: '24px Arial', fill: '#ffffff' });
+        let level2Text = game.add.text(game.world.centerX, 280, 'Press 2 for Level 2', { font: '22px Arial', fill: '#ffffff' });
         level2Text.anchor.set(0.5);
 
-        let level3Text = game.add.text(game.world.centerX, 340, 'Press 3 for Level 3', { font: '24px Arial', fill: '#ffffff' });
+        let level3Text = game.add.text(game.world.centerX, 340, 'Press 3 for Level 3', { font: '22px Arial', fill: '#ffffff' });
         level3Text.anchor.set(0.5);
 
-        let level4Text = game.add.text(game.world.centerX, 400, 'Press 4 for Level 4', { font: '24px Arial', fill: '#ffffff' });
+        let level4Text = game.add.text(game.world.centerX, 400, 'Press 4 for Level 4', { font: '22px Arial', fill: '#ffffff' });
         level4Text.anchor.set(0.5);
+        
+        let level5Text = game.add.text(game.world.centerX, 460, 'Press 5 for Level 5', { font: '22px Arial', fill: '#ffffff' });
+        level5Text.anchor.set(0.5);
 
-        let creditsText = game.add.text(game.world.centerX, 460, 'Press C for Credits', { font: '24px Arial', fill: '#ffffff' });
+        let creditsText = game.add.text(game.world.centerX, 520, 'Press C for Credits', { font: '22px Arial', fill: '#ffffff' });
         creditsText.anchor.set(0.5);
 
         let key1 = game.input.keyboard.addKey(Phaser.Keyboard.ONE);
@@ -102,6 +109,12 @@ let menuState = {
             music.stop();
             game.state.start('game');
         }, this);
+        let key5 = game.input.keyboard.addKey(Phaser.Keyboard.FIVE);
+        key5.onDown.add(function () {
+            level = 5;
+            music.stop();
+            game.state.start('game');
+        }, this);
         let keyC = game.input.keyboard.addKey(Phaser.Keyboard.C);
         keyC.onDown.add(function () {
             music.stop();
@@ -117,12 +130,12 @@ function dropVisualElement(group) {
     let sprite = game.add.sprite(x, -50, chosen);
     sprite.anchor.setTo(0.5);
 
-    // Escala específica para el icono de puntos x2
+    // Escala para el icono de puntos x2
     if (chosen === 'x2points') {
         sprite.scale.setTo(0.1);
     }
 
-    group.add(sprite); // Añadir al grupo para que quede detrás del texto
+    group.add(sprite);
 
     let duration = Phaser.Math.between(5000, 8000);
     let tween = game.add.tween(sprite).to({ y: GAME_STAGE_HEIGHT + 50 }, duration, Phaser.Easing.Linear.None, true);
@@ -131,7 +144,7 @@ function dropVisualElement(group) {
 
 let creditsState = {
     preload: function () {
-        game.load.image('background', 'imgs/background_brown.png');
+        game.load.image('background', 'imgs/background_menu.png');
         game.load.image('ball_blue', 'imgs/ball_blue.png');
         game.load.image('ball_red', 'imgs/ball_red.png');
         game.load.image('star', 'imgs/star.png');
@@ -146,7 +159,6 @@ let creditsState = {
         bg.width = GAME_STAGE_WIDTH;
         bg.height = GAME_STAGE_HEIGHT;
 
-        // Grupo visual de fondo
         this.visualGroup = game.add.group();
 
         // Animación visual de fondo
@@ -154,13 +166,13 @@ let creditsState = {
             dropVisualElement(this.visualGroup);
         }, this);
 
-        // Texto en primer plano
+        
         let credits = game.add.text(game.world.centerX, game.world.centerY, 'Created by\nAdrian Stoican\n&\nEric Olle\n\nPress M for Menu', {
             font: '24px Arial', fill: '#ffffff', align: 'center'
         });
         credits.anchor.set(0.5);
 
-        // Tecla para volver
+        
         let keyM = game.input.keyboard.addKey(Phaser.Keyboard.M);
         keyM.onDown.add(() => game.state.start('menu'));
     }
@@ -168,7 +180,7 @@ let creditsState = {
 
 let gameoverState = {
     preload: function () {
-        game.load.image('background_red', 'imgs/background_red.png');
+        game.load.image('background_red', 'imgs/background_lose.jpg');
     },
     
     create: function () {
@@ -193,7 +205,7 @@ let gameoverState = {
 
 let winState = {
     preload: function () {
-        game.load.image('background_green', 'imgs/background_green.png');
+        game.load.image('background_green', 'imgs/background_win.jpg');
     },
 
     create: function () {
@@ -220,7 +232,8 @@ let winState = {
         music.loop = true;
         music.volume = 0.2;
         music.play();
-
+        gameMusic.stop();
+        
         let keyM = game.input.keyboard.addKey(Phaser.Keyboard.M);
         keyM.onDown.add(function () {
             music.stop();
