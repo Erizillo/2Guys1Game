@@ -43,7 +43,6 @@ let bossLife = 20;
 let bossProjectiles;
 let bossBlocks;
 
-
 function preloadStage() {
     game.load.json('levelData', 'json/level' + level + '.json');
     game.load.image('powerup_expand', 'imgs/star.png');
@@ -175,7 +174,6 @@ function loadStage() {
             }
         }
     }
-
 
 
     flyingBricks = game.add.group();
@@ -436,6 +434,15 @@ function activatePowerup(paddle, powerup) {
 
     game.state.start('win');
 }
+    else if (powerup.type === 'life') {
+        lives += 1;
+        livesText.text = 'Lives: ' + lives;
+        
+    }
+    else if (powerup.type === 'time') {
+        timeLeft += 30;
+        timeText.text = 'Time left: ' + timeLeft;
+    }
     else if (powerup.type === 'life') {
         lives += 1;
         livesText.text = 'Lives: ' + lives;
